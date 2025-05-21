@@ -128,7 +128,8 @@ def fetch_all_device_ids(token):
     return ids
 
 urls = (
-    '/devices/(.*)/command/(.*)', 'devices_command'
+    '/devices/(.*)/command/(.*)', 'devices_command',
+    '/devices/status/(.*)', 'device_status'  # Should be here
 )
 app = web.application(urls, globals())
 
@@ -138,6 +139,14 @@ class devices_command:
         res = run_command_for_device(token, device_id, command_id)
         web.header('Content-Type', 'application/json')
         return json.dumps(res)
+
+class device_status:
+    def GET(self, device_id):
+        token = fetch_token()
+        res = fetch_device_statuses(token)
+        device_status = next((d for d in res.get("Data", []) if str(d["Id"]) == device_id), None)
+        web.header('Content-Type', 'application/json')
+        return json.dumps(device_status or {"error": "Device not found"})
 
 if __name__ == "__main__":
     # TODO: Check env vars
