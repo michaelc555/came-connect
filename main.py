@@ -141,12 +141,27 @@ class devices_command:
         return json.dumps(res)
 
 class device_status:
+    STATUS_MAP = {
+        16: "Open",
+        32: "Opening",
+        33: "Closing",
+        17: "Closed",
+        19: "Stopped (Partially Open)"
+    }
+
     def GET(self, device_id):
         token = fetch_token()
         res = fetch_device_statuses(token)
-        device_status = next((d for d in res.get("Data", []) if str(d["Id"]) == device_id), None)
-        web.header('Content-Type', 'application/json')
-        return json.dumps(device_status or {"error": "Device not found"})
+        device = next((d for d in res.get("Data", []) if str(d["Id"]) == device_id), None)
+
+        if not device:
+            return "Device not found"
+
+        # Extract status from Data array
+        status_code = device["States"][0]["Data"][0]
+        status_meaning = self.STATUS_MAP.get(status_code, "Unknown Status")
+
+        return status_meaning
 
 if __name__ == "__main__":
     # TODO: Check env vars
